@@ -1,0 +1,103 @@
+{
+  "scene": "biker",
+  "n": 128,
+  "bbox": [
+    [
+      -0.5571696339547635,
+      -3.2586442634742707,
+      -0.5369508001953364
+    ],
+    [
+      0.3464542715251444,
+      0.11648322253487994,
+      0.5973753292113543
+    ]
+  ],
+  "cases": {
+    "reparam": {
+      "gaussians_a": 152746,
+      "gaussians_b": 287228,
+      "occupied": 163034,
+      "added": 457,
+      "removed": 178,
+      "change_rate": 0.003894893089784953,
+      "raw_change_rate": 0.028449771329443305,
+      "timing": {
+        "t_splat": 0.627713,
+        "t_compare": 0.044092,
+        "t_reduce": 0.001186
+      }
+    },
+    "color": {
+      "gaussians_a": 152746,
+      "gaussians_b": 152746,
+      "occupied": 153846,
+      "added": 0,
+      "removed": 0,
+      "change_rate": 0.0,
+      "raw_change_rate": 0.0,
+      "timing": {
+        "t_splat": 0.639982,
+        "t_compare": 0.033376,
+        "t_reduce": 0.000842
+      }
+    },
+    "move": {
+      "gaussians_a": 152746,
+      "gaussians_b": 287228,
+      "occupied": 179566,
+      "added": 12199,
+      "removed": 9667,
+      "change_rate": 0.12177138211019904,
+      "raw_change_rate": 0.07303939807350449,
+      "timing": {
+        "t_splat": 0.727026,
+        "t_compare": 0.095638,
+        "t_reduce": 0.002465
+      },
+      "gt_voxels": 21502,
+      "precision": 0.9760815878532882,
+      "recall": 0.9922797879267045,
+      "raw_precision": 0.4072449412763549,
+      "raw_recall": 0.38838247604873966
+    },
+    "delete": {
+      "gaussians_a": 152746,
+      "gaussians_b": 274371,
+      "occupied": 161230,
+      "added": 406,
+      "removed": 15952,
+      "change_rate": 0.10145754512187558,
+      "raw_change_rate": 0.04757744412805246,
+      "timing": {
+        "t_splat": 0.601266,
+        "t_compare": 0.033754,
+        "t_reduce": 0.000829
+      },
+      "gt_voxels": 16068,
+      "precision": 0.962403716835799,
+      "recall": 0.9882374906646751,
+      "raw_precision": 0.3985490818408524,
+      "raw_recall": 0.30663430420711973
+    },
+    "copy": {
+      "gaussians_a": 152746,
+      "gaussians_b": 300159,
+      "occupied": 181658,
+      "added": 12353,
+      "removed": 163,
+      "change_rate": 0.0688986997544837,
+      "raw_change_rate": 0.05541424418604651,
+      "timing": {
+        "t_splat": 0.638916,
+        "t_compare": 0.034785,
+        "t_reduce": 0.000809
+      },
+      "gt_voxels": 12038,
+      "precision": 0.9578938958133589,
+      "recall": 0.9946835022428975,
+      "raw_precision": 0.1586520947176685,
+      "raw_recall": 0.31442100016614055
+    }
+  }
+}

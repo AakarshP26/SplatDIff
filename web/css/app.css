@@ -1,0 +1,33 @@
+/* Basic viewer styles (task 7). Full design system comes in task 8. */
+:root {
+  --bg: #0b0c0e; --panel: #15171b; --line: #262a31; --text: #e6e8eb; --muted: #8b929c;
+  --accent: #5b8cff; --added: #ff4d4f; --removed: #ffb020;
+  --r: 8px; --s1: 8px; --s2: 16px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+body { display: flex; flex-direction: column; }
+.topbar { display: flex; align-items: center; gap: var(--s2); padding: var(--s1) var(--s2);
+  background: var(--panel); border-bottom: 1px solid var(--line); font-size: 14px; }
+.brand { font-weight: 700; letter-spacing: .02em; }
+.field select { margin-left: var(--s1); background: var(--bg); color: var(--text); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 4px 8px; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.seg button { background: none; border: 0; color: var(--muted); padding: 6px 12px; cursor: pointer; font: inherit; }
+.seg button.on { background: var(--accent); color: #fff; }
+.stats { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b.add { color: var(--added); } .stats b.rem { color: var(--removed); }
+#stage { position: relative; flex: 1; overflow: hidden; }
+.view { position: absolute; inset: 0; }
+.view.top { pointer-events: none; }
+.wipe { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; left: 50%; cursor: ew-resize; }
+.wipe .handle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 6px;
+  background: #fff; color: #000; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; }
+.loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--s2); background: var(--bg); transition: opacity .25s; z-index: 10; }
+.loading.hide { opacity: 0; pointer-events: none; }
+.loading .title { font-size: 28px; font-weight: 700; }
+.loading .bar { width: 240px; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.loading .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+#loadmsg { color: var(--muted); font-size: 13px; }

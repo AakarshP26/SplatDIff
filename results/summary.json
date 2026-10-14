@@ -1,0 +1,126 @@
+{
+  "guitar": {
+    "reparam": {
+      "gaussians_a": 90854,
+      "gaussians_b": 162412,
+      "occupied": 44537,
+      "added": 177,
+      "removed": 201,
+      "change_rate": 0.008487325145384736,
+      "raw_change_rate": 0.022615658362989323
+    },
+    "color": {
+      "gaussians_a": 90854,
+      "gaussians_b": 90854,
+      "occupied": 41232,
+      "added": 0,
+      "removed": 0,
+      "change_rate": 0.0,
+      "raw_change_rate": 0.0
+    },
+    "move": {
+      "gaussians_a": 90854,
+      "gaussians_b": 162412,
+      "occupied": 47024,
+      "added": 2787,
+      "removed": 2189,
+      "change_rate": 0.10581830554610412,
+      "raw_change_rate": 0.1325383304940375,
+      "gt_voxels": 4613,
+      "precision": 0.9254421221864951,
+      "recall": 0.9932798612616519,
+      "raw_precision": 0.5715938303341902,
+      "raw_recall": 0.9247778018642966
+    },
+    "delete": {
+      "gaussians_a": 90854,
+      "gaussians_b": 145100,
+      "occupied": 44317,
+      "added": 180,
+      "removed": 2195,
+      "change_rate": 0.053591172687681925,
+      "raw_change_rate": 0.06766389658356417,
+      "gt_voxels": 1893,
+      "precision": 0.848,
+      "recall": 0.9952456418383518,
+      "raw_precision": 0.43040393013100436,
+      "raw_recall": 0.9339672477548864
+    },
+    "copy": {
+      "gaussians_a": 90854,
+      "gaussians_b": 179550,
+      "occupied": 47230,
+      "added": 2830,
+      "removed": 191,
+      "change_rate": 0.06396358246876985,
+      "raw_change_rate": 0.09126303286261053,
+      "gt_voxels": 2743,
+      "precision": 0.8709036742800397,
+      "recall": 0.993073277433467,
+      "raw_precision": 0.5244034707158352,
+      "raw_recall": 0.9059423988333941
+    }
+  },
+  "biker": {
+    "reparam": {
+      "gaussians_a": 152746,
+      "gaussians_b": 287228,
+      "occupied": 163034,
+      "added": 457,
+      "removed": 178,
+      "change_rate": 0.003894893089784953,
+      "raw_change_rate": 0.028449771329443305
+    },
+    "color": {
+      "gaussians_a": 152746,
+      "gaussians_b": 152746,
+      "occupied": 153846,
+      "added": 0,
+      "removed": 0,
+      "change_rate": 0.0,
+      "raw_change_rate": 0.0
+    },
+    "move": {
+      "gaussians_a": 152746,
+      "gaussians_b": 287228,
+      "occupied": 179566,
+      "added": 12199,
+      "removed": 9667,
+      "change_rate": 0.12177138211019904,
+      "raw_change_rate": 0.07303939807350449,
+      "gt_voxels": 21502,
+      "precision": 0.9760815878532882,
+      "recall": 0.9922797879267045,
+      "raw_precision": 0.4072449412763549,
+      "raw_recall": 0.38838247604873966
+    },
+    "delete": {
+      "gaussians_a": 152746,
+      "gaussians_b": 274371,
+      "occupied": 161230,
+      "added": 406,
+      "removed": 15952,
+      "change_rate": 0.10145754512187558,
+      "raw_change_rate": 0.04757744412805246,
+      "gt_voxels": 16068,
+      "precision": 0.962403716835799,
+      "recall": 0.9882374906646751,
+      "raw_precision": 0.3985490818408524,
+      "raw_recall": 0.30663430420711973
+    },
+    "copy": {
+      "gaussians_a": 152746,
+      "gaussians_b": 300159,
+      "occupied": 181658,
+      "added": 12353,
+      "removed": 163,
+      "change_rate": 0.0688986997544837,
+      "raw_change_rate": 0.05541424418604651,
+      "gt_voxels": 12038,
+      "precision": 0.9578938958133589,
+      "recall": 0.9946835022428975,
+      "raw_precision": 0.1586520947176685,
+      "raw_recall": 0.31442100016614055
+    }
+  }
+}

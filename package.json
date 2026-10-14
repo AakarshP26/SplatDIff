@@ -1,0 +1,12 @@
+{
+  "name": "splatdiff",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Geometry-aware change detection between 3D Gaussian Splatting scenes",
+  "license": "MIT",
+  "dependencies": {
+    "@mkkellogg/gaussian-splats-3d": "0.4.7",
+    "@playcanvas/splat-transform": "3.10.1",
+    "three": "0.160.0"
+  }
+}

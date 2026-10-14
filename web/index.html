@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SplatDiff</title>
+<link rel="stylesheet" href="css/app.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">SplatDiff</div>
+  <label class="field">Scene <select id="scene"></select></label>
+  <div class="seg" id="cases"></div>
+  <label class="toggle"><input type="checkbox" id="overlay" checked> Changes</label>
+  <div class="stats" id="stats"></div>
+</header>
+<main id="stage">
+  <div class="view" id="viewA"></div>
+  <div class="view top" id="viewB"></div>
+  <div class="wipe" id="wipe"><div class="handle"><span>t</span><span>t+1</span></div></div>
+  <div class="loading" id="loading"><div class="title">SplatDiff</div><div class="bar"><i id="bar"></i></div><div id="loadmsg">Loading</div></div>
+</main>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

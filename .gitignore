@@ -1,0 +1,19 @@
+# generated data (rebuild with scripts/convert.sh and python/prepare.py)
+data/converted/
+data/cases/
+data/bin/
+data/grids/
+*.ply
+!data/raw/*.compressed.ply
+*.f32
+*.u8
+# builds
+kernels/serial/splatdiff_serial
+kernels/serial/splatdiff_omp
+kernels/cuda/splatdiff_cuda
+kernels/cuda/build/
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+web/data/
