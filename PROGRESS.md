@@ -87,9 +87,11 @@ Tests:
   splats render, wipe slider and overlay correct.
 
 Notes for task 8:
-- Camera framing is poor: scene sits small in the lower middle. Compute framing from the occupied
-  voxels (or a per-scene preset) and look at the occupied centre; add front/top/orbit presets.
-- 404 in console is favicon; add one.
+- Camera framing: now looks at the centre of the occupied region (focus in changes.json, 5th-95th
+  percentile box of occupied voxels). Better, but the guitar still sits low and the overlay covers
+  the moved neck; tune per-scene presets (front/top/orbit) and use outline/lower-opacity overlay.
+- Biker scene not yet checked visually in the browser (no URL parameter for scene yet; add ?scene=).
+- Favicon added (web/favicon.svg).
 - Implement the full design system and tabs (Viewer, Results, Benchmark, How it works) per spec.
 - Playwright screenshot helper used: playwright-core + chromium at
   /opt/pw-browsers/chromium-1194/chrome-linux/chrome with swiftshader flags; wait for

@@ -6,7 +6,7 @@ Writes (generated, not committed):
   web/data/<scene>/<case>.changes.json                     changed voxels
   web/data/manifest.json                                   scenes, cases, metrics
 
-changes.json: {"grid": {"lo": [3], "h": [3], "n": N},
+changes.json: {"grid": {"lo": [3], "h": [3], "n": N}, "focus": {"center": [3], "radius": r},
                "added": [[i, j, k], ...], "removed": [[i, j, k], ...]}
 Voxel centre in scene coordinates = lo + (idx + 0.5) * h.
 """
@@ -48,7 +48,10 @@ def main():
                 shutil.copyfile(os.path.join(ROOT, "data/cases", s, f"{c}.ply"), os.path.join(out, f"{c}.ply"))
                 _, lab = run_kernels(a.exe, base, os.path.join(ROOT, "data/bin", s, f"{c}.bin"),
                                      lo, hi, a.n, os.path.join(tmp, f"{s}_{c}"))
-                ch = {"grid": {"lo": lo.tolist(), "h": h.tolist(), "n": a.n},
+                occ = np.argwhere(lab & 1)
+                fc = lo + (np.percentile(occ, [5, 95], axis=0) + 0.5) * h      # occupied-region box
+                focus = {"center": fc.mean(0).tolist(), "radius": float(0.5 * np.linalg.norm(fc[1] - fc[0]))}
+                ch = {"grid": {"lo": lo.tolist(), "h": h.tolist(), "n": a.n}, "focus": focus,
                       "added": np.argwhere(lab & 4).tolist(),
                       "removed": np.argwhere(lab & 8).tolist()}
                 with open(os.path.join(out, f"{c}.changes.json"), "w") as f:

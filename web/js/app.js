@@ -28,11 +28,14 @@ function makeBoxes(voxels, g, color) {
   return mesh;
 }
 
-function cameraFor(g) {
-  const n = g.n;
-  const c = [0, 1, 2].map((k) => g.lo[k] + 0.5 * n * g.h[k]);
-  const ext = Math.max(...g.h) * n;
-  return { lookAt: c, pos: [c[0] + 0.15 * ext, c[1] - 0.35 * ext, c[2] - 1.3 * ext] };
+// Default framing: look at the centre of the occupied region (5th-95th percentile box from
+// export_web.py) from the front, slightly above (scenes are -y up), at a distance that fits it.
+function cameraFor(focus) {
+  const c = focus.center, r = focus.radius;
+  const d = r / Math.tan((25 * Math.PI) / 180);
+  const dir = [0.25, -0.35, -1];
+  const len = Math.hypot(...dir);
+  return { lookAt: c, pos: c.map((v, k) => v + (dir[k] / len) * d) };
 }
 
 function makeViewer(root, cam, sharedCamera) {
@@ -56,7 +59,7 @@ async function load() {
   const base = `data/${state.scene}`;
   const ch = await (await fetch(`${base}/${state.caseId}.changes.json`)).json();
   grid = ch.grid;
-  const cam = cameraFor(grid);
+  const cam = cameraFor(ch.focus);
   viewerA = makeViewer($('viewA'), cam, null);
   await viewerA.addSplatScene(`${base}/base.ply`, { format: GS.SceneFormat.Ply, showLoadingUI: false,
     onProgress: (p) => setLoading(true, p / 200, 'Loading scene at t') });
