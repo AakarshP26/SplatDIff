@@ -4,7 +4,7 @@ STATUS: IN PROGRESS
 
 ## Next task
 
-Task 7 (finish) then Task 8: UI polish to presentation quality (at least two runs). See "Notes for task 8" below.
+Task 8, UI polish run 2 (of at least two). See "UI polish run 2 to-do" in the 2026-10-31 log entry.
 
 ## Task checklist
 
@@ -14,8 +14,8 @@ Task 7 (finish) then Task 8: UI polish to presentation quality (at least two run
 - [x] 4. End-to-end pipeline, results/*.json
 - [x] 5. CUDA kernels, NVRTC check, notebooks/colab_benchmark.ipynb (Colab run pending, see below)
 - [x] 6. Export change voxels and scenes for the viewer
-- [~] 7. Web viewer basics (working: stacked before/after viewers, wipe slider, shared camera, red/amber voxel overlay, case keys 1-5, O toggles overlay, loading screen)
-- [ ] 8. UI polish (presentation quality, at least two runs)
+- [x] 7. Web viewer basics
+- [~] 8. UI polish (presentation quality, at least two runs): run 1 done 2026-10-31
 - [ ] 9. One-click launcher (start.sh / start.bat) and README instructions
 - [ ] 10. Results figures for report and slides
 - [ ] 11. Final QA pass, set STATUS: COMPLETE
@@ -31,9 +31,56 @@ python3 python/test_kernels.py guitar move 48
 python3 python/pipeline.py         # results/<scene>.json, results/summary.json
 python3 python/export_web.py       # web/data/*
 cd web && python3 -m http.server 8765
+node scripts/screenshot.mjs out.png 1920 1080 "?scene=biker&case=move" [results|benchmark|how|help|present]
 ```
 
 ## Log
+
+### 2026-10-31 (run 2, UI polish run 1)
+
+Push was denied again (403 from the git proxy: repo not in this scheduled task's authorised
+sources). The stored prompt says to keep building without pushing, so this run's work is
+committed locally and delivered as a git bundle (splatdiff_2026-10-31.bundle).
+
+Done:
+- Rebuilt all generated data (convert, prepare, kernels, pipeline, export_web); numbers match run 1.
+- web/css/app.css rewritten as a design system: tokens for colour, 8px spacing scale, radii,
+  shadows, type scale, motion; dark theme, accent #6e8bff, red added, amber removed.
+- Inter (OFL, latin 400/500/600/700) vendored in web/vendor/fonts; Chart.js 4 UMD vendored in
+  web/vendor (MIT licences included).
+- web/index.html: top bar (logo wordmark, tabs Viewer/Results/Benchmark/How it works, scene
+  picker, case segmented control, sidebar toggle, presentation button, help popover), full-bleed
+  stage, collapsible right sidebar (case description, change stats, overlay controls, camera).
+- web/js/app.js: wipe slider with round knob (drag, arrow keys, sidebar range); Before/After
+  tags; legend; camera presets front/top/three-quarter (stage toolbar and sidebar); auto-rotate
+  (OrbitControls); overlay styles solid/glow (additive)/heat (per-instance colour by 26-neighbour
+  density); opacity slider; only-changes (hides splat meshes); loading screen with logo, title,
+  progress bar; soft fade when switching scene or case; URL params ?scene=&case=&page=;
+  keyboard 1-5, O, R, Space, P, ?, Esc; toasts; presentation mode (fullscreen, sidebar hidden).
+- Results page: four metric cards with count-up (false-change rate, colour, precision, recall
+  vs raw baseline), two Chart.js bar charts (false-change on reparam/colour; precision on edits,
+  SplatDiff vs raw centres), full table. Benchmark page: notice about pending CUDA numbers,
+  metric cards, time and speedup charts, kernel table. How it works: inline SVG pipeline,
+  four steps, team, courses, related work.
+- Splat rendering is paused (viewer.stop) while a content page covers the stage.
+- export_web.py now also copies results/benchmark.json to web/data/benchmark.json.
+- scripts/screenshot.mjs (playwright-core, devDependency) for headless screenshots; finds
+  chromium in /opt/pw-browsers (path changed to chromium-1243/chrome-linux64 in this sandbox).
+- Screenshots: results/screenshots/ui_*.png (1920x1080 and 1280x720).
+
+Tests: all pages render without console errors at 1920x1080 and 1280x720; help popover,
+case switching and charts checked visually. Headless swiftshader is slow (about 40 s per shot);
+run screenshots one at a time, parallel runs time out.
+
+UI polish run 2 to-do:
+- Camera framing per scene: objects sit low and large (guitar body cut at bottom at 1920, biker
+  boots at bottom). Add per-scene preset overrides (offset, distance) in export_web.py or app.js.
+- Overlay still reads as a solid blob even at opacity 0.45 because many boxes stack; try
+  depthTest on, drawing only surface voxels (voxels with an empty 6-neighbour), or glow as default.
+- Check presentation mode screenshot, glow and heat styles, only-changes mode, top/3-4 presets.
+- Topbar at 1280: scene/case labels are hidden by design; verify nothing wraps at 1280x720
+  on the Results page (cards go 2 columns there).
+- Results charts: consider a log or broken axis if raw bars dominate; add per-case short captions.
 
 ### 2026-10-14 (run 1)
 
@@ -97,9 +144,9 @@ Notes for task 8:
   /opt/pw-browsers/chromium-1194/chrome-linux/chrome with swiftshader flags; wait for
   window.__splatdiffReady then 6 s. Consider adding it to scripts/screenshot.mjs.
 
-Action for Aanand:
+Action for Aanand (still valid on 2026-10-31):
 1. Add AakarshP26/SplatDIff to the scheduled task's GitHub sources (Aakarsh may need to grant
    the Claude GitHub app access), otherwise every run starts from the empty repo again.
 2. Push this run's work: `git clone https://github.com/AakarshP26/SplatDIff.git && cd SplatDIff &&
-   git pull /path/to/splatdiff.bundle main && git push origin main`.
+   git pull /path/to/splatdiff_2026-10-31.bundle main && git push origin main` (this bundle contains run 1 and run 2).
 3. After pushing, run notebooks/colab_benchmark.ipynb on a Colab T4 and commit results/benchmark.json.

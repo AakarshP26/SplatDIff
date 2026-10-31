@@ -8,5 +8,8 @@
     "@mkkellogg/gaussian-splats-3d": "0.4.7",
     "@playcanvas/splat-transform": "3.10.1",
     "three": "0.160.0"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1"
   }
 }

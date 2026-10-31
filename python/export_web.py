@@ -5,6 +5,7 @@ Writes (generated, not committed):
   web/data/<scene>/base.ply, web/data/<scene>/<case>.ply   float PLY copies for the viewer
   web/data/<scene>/<case>.changes.json                     changed voxels
   web/data/manifest.json                                   scenes, cases, metrics
+  web/data/benchmark.json                                  copy of results/benchmark.json
 
 changes.json: {"grid": {"lo": [3], "h": [3], "n": N}, "focus": {"center": [3], "radius": r},
                "added": [[i, j, k], ...], "removed": [[i, j, k], ...]}
@@ -62,6 +63,9 @@ def main():
             manifest["scenes"].append(entry)
     with open(os.path.join(ROOT, "web/data/manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)
+    bench = os.path.join(ROOT, "results", "benchmark.json")       # for the Benchmark page
+    if os.path.exists(bench):
+        shutil.copyfile(bench, os.path.join(ROOT, "web/data/benchmark.json"))
 
 
 if __name__ == "__main__":

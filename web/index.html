@@ -3,27 +3,154 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SplatDiff</title>
+<title>SplatDiff: geometric change detection for Gaussian splats</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/app.css">
+<script src="vendor/chart.umd.min.js"></script>
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
 </script>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">SplatDiff</div>
-  <label class="field">Scene <select id="scene"></select></label>
-  <div class="seg" id="cases"></div>
-  <label class="toggle"><input type="checkbox" id="overlay" checked> Changes</label>
-  <div class="stats" id="stats"></div>
-</header>
-<main id="stage">
-  <div class="view" id="viewA"></div>
-  <div class="view top" id="viewB"></div>
-  <div class="wipe" id="wipe"><div class="handle"><span>t</span><span>t+1</span></div></div>
-  <div class="loading" id="loading"><div class="title">SplatDiff</div><div class="bar"><i id="bar"></i></div><div id="loadmsg">Loading</div></div>
-</main>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="logo" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="6" fill="#6e8bff"/>
+    <circle cx="9" cy="10" r="4" fill="#fff" fill-opacity=".9"/><circle cx="15" cy="14" r="4" fill="#ff5a5f" fill-opacity=".9"/>
+    <path d="M12 3v18" stroke="#08090b" stroke-width="1.5"/></symbol>
+</svg>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand"><svg><use href="#logo"/></svg>SplatDiff<span class="tag">change detection for 3DGS</span></div>
+    <nav class="nav" role="tablist" id="nav">
+      <button role="tab" data-page="viewer" aria-selected="true">Viewer</button>
+      <button role="tab" data-page="results" aria-selected="false">Results</button>
+      <button role="tab" data-page="benchmark" aria-selected="false">Benchmark</button>
+      <button role="tab" data-page="how" aria-selected="false">How it works</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="group"><span class="label hide-sm">Scene</span><div class="select" data-tip="Source scene"><select id="scene" aria-label="Scene"></select></div></div>
+    <div class="group"><span class="label hide-sm">Case</span><div class="seg" id="cases" role="group" aria-label="Test case"></div></div>
+    <button class="icon-btn" id="btnSidebar" data-tip="Toggle sidebar" aria-pressed="true" aria-label="Toggle sidebar">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M10 2.5v11"/></svg></button>
+    <button class="icon-btn" id="btnPresent" data-tip="Presentation mode (P)" aria-label="Presentation mode">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg></button>
+    <button class="icon-btn" id="btnHelp" data-tip="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"/><circle cx="8" cy="11.6" r=".6" fill="currentColor"/></svg></button>
+    <div class="popover" id="help" role="dialog" aria-label="Keyboard shortcuts">
+      <h4>Keyboard shortcuts</h4>
+      <div class="row"><span>Select test case</span><span><kbd>1</kbd> to <kbd>5</kbd></span></div>
+      <div class="row"><span>Toggle change overlay</span><kbd>O</kbd></div>
+      <div class="row"><span>Reset camera</span><kbd>R</kbd></div>
+      <div class="row"><span>Auto-rotate</span><kbd>Space</kbd></div>
+      <div class="row"><span>Presentation mode</span><kbd>P</kbd></div>
+      <div class="row"><span>Show this help</span><kbd>?</kbd></div>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="stage" id="stage" aria-label="3D viewer">
+      <div class="view" id="viewA"></div>
+      <div class="view top" id="viewB"></div>
+      <div class="stage-tag left"><span class="dot" style="background:var(--removed)"></span>Before <b>t</b></div>
+      <div class="stage-tag right"><span class="dot" style="background:var(--added)"></span>After <b>t+1</b> <span class="dim" id="tagCase"></span></div>
+      <div class="wipe" id="wipe" role="slider" aria-label="Before/after wipe" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+        <div class="knob"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4 2 8l4 4M10 4l4 4-4 4"/></svg></div>
+      </div>
+      <div class="stage-legend" id="legend"><span><i class="sw rem"></i>Removed (shown on t)</span><span><i class="sw add"></i>Added (shown on t+1)</span></div>
+      <div class="stage-tools">
+        <button class="icon-btn" data-cam="front" data-tip="Front view" aria-label="Front view">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10" rx="1.5"/></svg></button>
+        <button class="icon-btn" data-cam="top" data-tip="Top view" aria-label="Top view">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2 14 5.5 8 9 2 5.5z"/><path d="M2 9.5 8 13l6-3.5"/></svg></button>
+        <button class="icon-btn" data-cam="orbit" data-tip="Three-quarter view" aria-label="Three-quarter view">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="8" cy="8" rx="6.5" ry="3"/><circle cx="8" cy="8" r="1.5"/></svg></button>
+        <button class="icon-btn" id="btnRotate" data-tip="Auto-rotate (Space)" aria-pressed="false" aria-label="Auto-rotate">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 11 3.4"/><path d="M11.5 1v3h-3"/></svg></button>
+      </div>
+      <div class="loading" id="loading">
+        <div class="hero"><svg><use href="#logo"/></svg><h1>SplatDiff</h1><p>Geometric change detection for 3D Gaussian Splatting</p></div>
+        <div class="progress"><i id="bar"></i></div>
+        <div class="loadmsg" id="loadmsg">Loading</div>
+      </div>
+    </section>
+
+    <aside class="sidebar" id="sidebar" aria-label="Controls">
+      <div class="sidebar-inner">
+        <div class="section">
+          <h3>Test case <span class="dim num" id="caseKey"></span></h3>
+          <p class="case-desc" id="caseDesc"></p>
+        </div>
+        <div class="section">
+          <h3>Detected changes</h3>
+          <div class="stat-grid">
+            <div class="stat add"><div class="k">Added voxels</div><div class="v" id="stAdded">0</div></div>
+            <div class="stat rem"><div class="k">Removed voxels</div><div class="v" id="stRemoved">0</div></div>
+            <div class="stat"><div class="k">Change rate</div><div class="v" id="stRate">0</div></div>
+            <div class="stat"><div class="k">Raw baseline</div><div class="v" id="stRaw">0</div></div>
+            <div class="stat"><div class="k">Precision</div><div class="v" id="stPrec">n/a</div></div>
+            <div class="stat"><div class="k">Recall</div><div class="v" id="stRec">n/a</div></div>
+          </div>
+        </div>
+        <div class="section">
+          <h3>Overlay</h3>
+          <div class="row"><span>Show changes</span><label class="switch" data-tip="Toggle overlay (O)" data-tip-pos="left"><input type="checkbox" id="overlay" checked aria-label="Show changes"><i></i></label></div>
+          <div class="row"><span>Style</span>
+            <div class="seg" id="ovStyle" role="group" aria-label="Overlay style">
+              <button data-style="solid" aria-pressed="true">Solid</button><button data-style="glow" aria-pressed="false">Glow</button><button data-style="heat" aria-pressed="false">Heat</button>
+            </div></div>
+          <div class="row"><span>Opacity</span><input type="range" id="ovOpacity" min="0.1" max="1" step="0.05" value="0.45" aria-label="Overlay opacity"></div>
+          <div class="row"><span>Only changes</span><label class="switch" data-tip="Hide the splats" data-tip-pos="left"><input type="checkbox" id="onlyChanges" aria-label="Only changes"><i></i></label></div>
+        </div>
+        <div class="section">
+          <h3>Camera</h3>
+          <div class="seg full" id="camSeg" role="group" aria-label="Camera preset">
+            <button data-cam="front" aria-pressed="true">Front</button><button data-cam="top" aria-pressed="false">Top</button><button data-cam="orbit" aria-pressed="false">3/4</button>
+          </div>
+          <div class="row" style="margin-top:12px"><span>Auto-rotate</span><label class="switch"><input type="checkbox" id="autoRotate" aria-label="Auto-rotate"><i></i></label></div>
+          <div class="row"><span>Wipe position</span><input type="range" id="wipeRange" min="0" max="1" step="0.01" value="0.5" aria-label="Wipe position"></div>
+          <div class="row"><button class="btn" id="btnReset" style="width:100%;justify-content:center">Reset camera <kbd>R</kbd></button></div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="page" id="page-results" aria-label="Results"><div class="content">
+      <header><h2>Results</h2><p>SplatDiff compares canonical voxel fields instead of raw Gaussians. Re-training a scene changes almost every Gaussian, yet SplatDiff reports almost no change; real edits are still found with high precision and recall.</p></header>
+      <div class="cards" id="cards"></div>
+      <div class="panels">
+        <div class="panel"><h4>False-change rate on unchanged scenes</h4><p class="sub">Re-parameterised and colour-shifted copies. Lower is better.</p><div class="chart-box"><canvas id="chFalse"></canvas></div></div>
+        <div class="panel"><h4>Precision on real edits</h4><p class="sub">Move, delete and copy cases against ground truth. Higher is better.</p><div class="chart-box"><canvas id="chPrec"></canvas></div></div>
+        <div class="panel span2"><h4>All cases</h4><p class="sub">128<sup>3</sup> grid, occupancy threshold 0.15, 1-voxel dilation.</p><table class="table" id="resTable"></table></div>
+      </div>
+    </div></section>
+
+    <section class="page" id="page-benchmark" aria-label="Benchmark"><div class="content">
+      <header><h2>Benchmark</h2><p>Three kernels: splat-to-grid with atomic adds, per-voxel compare with dilation, and a reduction. Same algorithm in serial C, OpenMP and CUDA.</p></header>
+      <div id="benchNotice"></div>
+      <div class="cards" id="benchCards"></div>
+      <div class="panels">
+        <div class="panel"><h4>Total time per implementation</h4><p class="sub" id="benchSub"></p><div class="chart-box"><canvas id="chTime"></canvas></div></div>
+        <div class="panel"><h4>Speedup over serial</h4><p class="sub">Higher is better.</p><div class="chart-box"><canvas id="chSpeed"></canvas></div></div>
+        <div class="panel span2"><h4>Kernel breakdown</h4><p class="sub">Milliseconds per kernel, all grid sizes.</p><table class="table" id="benchTable"></table></div>
+      </div>
+    </div></section>
+
+    <section class="page" id="page-how" aria-label="How it works"><div class="content">
+      <header><h2>How it works</h2><p>Two 3DGS scenes of the same place contain different Gaussians even when nothing changed, because training is driven by image loss. SplatDiff compares what the Gaussians describe, not the Gaussians themselves.</p></header>
+      <div class="diagram" id="diagram"></div>
+      <div class="steps">
+        <div class="step"><div class="n">01</div><h5>Two scenes</h5><p>Scene A at time t and scene B at t+1, each a set of anisotropic Gaussians.</p></div>
+        <div class="step"><div class="n">02</div><h5>Canonical field</h5><p>Each Gaussian deposits its opacity-weighted volume into a voxel grid, mass-conserving and colour-independent.</p></div>
+        <div class="step"><div class="n">03</div><h5>Compare</h5><p>Occupancy masks are compared with a 1-voxel dilation, so sub-voxel jitter is ignored.</p></div>
+        <div class="step"><div class="n">04</div><h5>Changes</h5><p>Added and removed voxels are reduced to counts and drawn over the splats.</p></div>
+      </div>
+      <div class="team">
+        <div class="panel"><h4>Team</h4><p>Aakarsh Prabhu (1RV23CS004)<br>Aditi R (1RV23CS016)</p></div>
+        <div class="panel"><h4>Courses</h4><p>Computer Graphics and VR (CGVR)<br>Parallel Architectures and GPU Programming (PAGP)</p></div>
+        <div class="panel"><h4>Related work</h4><p>3DGS-CD (Lu et al., 2024) and CL-Splats (Ackermann et al., ICCV 2025) detect change from rendered images. SplatDiff works in 3D directly.</p></div>
+      </div>
+    </div></section>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>
