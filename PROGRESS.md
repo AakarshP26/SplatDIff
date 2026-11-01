@@ -4,7 +4,7 @@ STATUS: IN PROGRESS
 
 ## Next task
 
-Task 8, UI polish run 2 (of at least two). See "UI polish run 2 to-do" in the 2026-10-31 log entry.
+Task 8, UI polish run 3. See "UI polish run 3 to-do" in the 2026-11-01 (run 3) log entry.
 
 ## Task checklist
 
@@ -15,7 +15,7 @@ Task 8, UI polish run 2 (of at least two). See "UI polish run 2 to-do" in the 20
 - [x] 5. CUDA kernels, NVRTC check, notebooks/colab_benchmark.ipynb (Colab run pending, see below)
 - [x] 6. Export change voxels and scenes for the viewer
 - [x] 7. Web viewer basics
-- [~] 8. UI polish (presentation quality, at least two runs): run 1 done 2026-10-31
+- [~] 8. UI polish (presentation quality, at least two runs): run 1 done 2026-10-31, run 2 done 2026-11-01
 - [ ] 9. One-click launcher (start.sh / start.bat) and README instructions
 - [ ] 10. Results figures for report and slides
 - [ ] 11. Final QA pass, set STATUS: COMPLETE
@@ -35,6 +35,48 @@ node scripts/screenshot.mjs out.png 1920 1080 "?scene=biker&case=move" [results|
 ```
 
 ## Log
+
+### 2026-11-01 (run 3, UI polish run 2)
+
+Push was denied again (403 from the git proxy: AakarshP26/SplatDIff is not in this scheduled
+task's authorised sources). Work is committed locally and delivered as splatdiff_2026-11-01.bundle.
+
+Done:
+- Rebuilt all generated data from a fresh clone (convert, prepare, kernels, pipeline, export_web);
+  numbers identical to earlier runs.
+- Camera framing: per-scene table SCENE_CAM in web/js/app.js (default preset, vertical offset
+  as a fraction of the focus radius, distance factor). Guitar now opens in the 3/4 view
+  (front view showed the guitar edge-on), biker in front view pulled back so the boots are inside
+  the frame. Both objects are centred vertically.
+- Overlay: only surface voxels are drawn (voxels with at least one empty 6-neighbour), so the
+  solid style no longer stacks dozens of transparent boxes into a blob. Glow opacity halved
+  (it saturated to white).
+- URL params ?cam=front|top|orbit and ?style=solid|glow|heat (for screenshots and demos).
+- Charts: value labels above every bar (inline Chart.js plugin), log y axis on the benchmark time
+  chart (CUDA bar was invisible on a linear axis), two-line category labels instead of rotated
+  ones, legends moved below the plot so they never collide with labels.
+
+Tests: screenshots at 1920x1080 and 1280x720 of viewer (guitar, biker, 3/4, glow), results and
+benchmark pages, no console errors. Saved: results/screenshots/ui_viewer_guitar_move_1920.png,
+ui_results_1920.png, ui_benchmark_1280.png.
+
+Observation: in some headless screenshots the previous nav tab still shows its background
+because the 150 ms CSS transition had not run when the frame was captured (computed style
+was still transparent on the new tab). Not seen in other shots; probably a swiftshader timing
+artefact, but check in a real browser.
+
+UI polish run 3 to-do:
+- Check in a real browser: tab highlight after switching, wipe drag, presets, auto-rotate.
+- Presentation mode and help popover screenshots at 1280x720; heat style; only-changes mode.
+- Delete and copy cases visually for both scenes (overlay readability, colours).
+- Results table: show "colour" not "color" in the case column; consider a scene grouping row.
+- Benchmark: add a 64/128/256 grid-size selector or a scaling line chart (data already in
+  results/benchmark.json for all three sizes).
+- Then move on to task 9 (start.sh / start.bat launcher).
+
+Action for Aanand: same as before. Add AakarshP26/SplatDIff to this scheduled task's GitHub
+sources, then push this run's bundle: `git pull /path/to/splatdiff_2026-11-01.bundle main &&
+git push origin main` inside a clone of the repo.
 
 ### 2026-11-01 (fix, interactive session)
 

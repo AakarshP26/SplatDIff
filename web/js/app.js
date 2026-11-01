@@ -15,6 +15,8 @@ const CASE_INFO = {
   delete: 'Gaussians around a central object are deleted, combined with re-parameterisation. Expect removed voxels only.',
   copy: 'An object is duplicated to a new place, combined with re-parameterisation. Expect added voxels only.',
 };
+// Per-scene framing: default preset, vertical offset (fraction of focus radius, +y is down) and distance factor.
+const SCENE_CAM = { guitar: { cam: 'orbit', dy: 0.2, dist: 0.85 }, biker: { cam: 'front', dy: 0.22, dist: 1.2 } };
 const CAM_DIRS = { front: [0.25, -0.35, -1], top: [0.02, -1, -0.12], orbit: [1, -0.55, -0.9] };
 
 const state = { manifest: null, bench: null, scene: null, caseId: 'move', wipe: 0.5, overlay: true, style: 'solid',
@@ -54,7 +56,14 @@ function heatColors(voxels) {
     return lo.clone().lerp(hi, Math.min(1, (n - 1) / 20));
   });
 }
+function surfaceVoxels(voxels) {
+  const key = (i, j, k) => (i * 1024 + j) * 1024 + k;
+  const set = new Set(voxels.map((v) => key(v[0], v[1], v[2])));
+  const nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
+  return voxels.filter(([i, j, k]) => nb.some(([a, b, c]) => !set.has(key(i + a, j + b, k + c))));
+}
 function makeBoxes(voxels, g, color) {
+  voxels = surfaceVoxels(voxels);
   const geo = new THREE.BoxGeometry(g.h[0] * 0.92, g.h[1] * 0.92, g.h[2] * 0.92);
   const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: state.opacity, depthWrite: false });
   const mesh = new THREE.InstancedMesh(geo, mat, Math.max(voxels.length, 1));
@@ -73,7 +82,7 @@ function applyOverlay() {
     if (!b) continue;
     b.visible = state.overlay;
     const m = b.material;
-    m.opacity = state.style === 'glow' ? Math.min(1, state.opacity * 0.7) : state.opacity;
+    m.opacity = state.style === 'glow' ? Math.min(1, state.opacity * 0.35) : state.opacity;
     m.blending = state.style === 'glow' ? THREE.AdditiveBlending : THREE.NormalBlending;
     if (state.style === 'heat') { m.color.set(0xffffff); b.userData.heat.forEach((c, i) => b.setColorAt(i, c)); }
     else { m.color.copy(b.userData.base); if (b.instanceColor) b.userData.heat.forEach((_, i) => b.setColorAt(i, new THREE.Color(0xffffff))); }
@@ -88,7 +97,9 @@ function applyOverlay() {
 
 // ---------- camera ----------
 function camPose(name) {
-  const c = focus.center, r = focus.radius, d = (1.3 * r / Math.tan((24 * Math.PI) / 180)) * (name === 'top' ? 1.1 : 1);
+  const o = SCENE_CAM[state.scene] || { dy: 0, dist: 1 }, r = focus.radius;
+  const c = [focus.center[0], focus.center[1] + (name === 'top' ? 0 : o.dy * r), focus.center[2]];
+  const d = o.dist * (1.3 * r / Math.tan((24 * Math.PI) / 180)) * (name === 'top' ? 1.1 : 1);
   const dir = CAM_DIRS[name], len = Math.hypot(...dir);
   return { lookAt: c, pos: c.map((v, k) => v + (dir[k] / len) * d) };
 }
@@ -251,15 +262,32 @@ function chartDefaults() {
   Chart.defaults.plugins.tooltip.padding = 10;
   Chart.defaults.animation.duration = 700;
 }
-function barChart(id, labels, datasets, { yFmt = (v) => v, max } = {}) {
+// Draws each bar's value above it, so small bars (CPU speedups, SplatDiff false-change) stay readable.
+const valueLabels = {
+  id: 'valueLabels',
+  afterDatasetsDraw(chart, _a, opts) {
+    if (!opts || !opts.fmt) return;
+    const { ctx } = chart;
+    ctx.save();
+    ctx.font = '500 11px Inter, sans-serif'; ctx.fillStyle = '#9aa3b2'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    chart.data.datasets.forEach((d, i) => chart.getDatasetMeta(i).data.forEach((bar, j) => {
+      const v = d.data[j]; if (v == null || Number.isNaN(v)) return;
+      ctx.fillText(opts.fmt(v), bar.x, bar.y - 4);
+    }));
+    ctx.restore();
+  },
+};
+function barChart(id, labels, datasets, { yFmt = (v) => v, max, log = false, labelFmt = null } = {}) {
   if (!window.Chart) return;
   if (charts[id]) charts[id].destroy();
   charts[id] = new Chart($(id), {
     type: 'bar',
+    plugins: [valueLabels],
     data: { labels, datasets: datasets.map((d) => ({ borderRadius: 4, maxBarThickness: 36, categoryPercentage: 0.7, barPercentage: 0.85, ...d })) },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: datasets.length > 1, position: 'top', align: 'end' }, tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${yFmt(c.parsed.y)}` } } },
-      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, max, ticks: { callback: yFmt }, grid: { color: '#1a1d22' } } } },
+    options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 18 } },
+      plugins: { valueLabels: { fmt: labelFmt }, legend: { display: datasets.length > 1, position: 'bottom', align: 'center', labels: { padding: 16 } }, tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${yFmt(c.parsed.y)}` } } },
+      scales: { x: { grid: { display: false } }, y: log ? { type: 'logarithmic', ticks: { callback: (v) => ([1, 10, 100, 1000, 10000].includes(+v) ? yFmt(v) : '') }, grid: { color: '#1a1d22' } }
+        : { beginAtZero: true, max, ticks: { callback: yFmt }, grid: { color: '#1a1d22' } } } },
   });
 }
 
@@ -286,11 +314,11 @@ function buildResults() {
   countUp($('cd3'), rec, { dec: 2 });
   const lbl = [];
   const ours = [], raw = [];
-  ids.forEach((s) => ['reparam', 'color'].forEach((c) => { lbl.push(`${s} ${c === 'reparam' ? 're-param' : c}`); ours.push(m(s, c).change_rate * 100); raw.push(m(s, c).raw_change_rate * 100); }));
-  barChart('chFalse', lbl, [{ label: 'SplatDiff', data: ours, backgroundColor: COL.accent }, { label: 'Raw centres', data: raw, backgroundColor: COL.raw }], { yFmt: (v) => `${(+v).toFixed(1)}%` });
+  ids.forEach((s) => ['reparam', 'color'].forEach((c) => { lbl.push([s, c === 'reparam' ? 're-param' : 'colour']); ours.push(m(s, c).change_rate * 100); raw.push(m(s, c).raw_change_rate * 100); }));
+  barChart('chFalse', lbl, [{ label: 'SplatDiff', data: ours, backgroundColor: COL.accent }, { label: 'Raw centres', data: raw, backgroundColor: COL.raw }], { yFmt: (v) => `${(+v).toFixed(1)}%`, labelFmt: (v) => `${v.toFixed(2)}%` });
   const l2 = [], p1 = [], p2 = [];
-  ids.forEach((s) => edits.forEach((c) => { l2.push(`${s} ${c}`); p1.push(m(s, c).precision); p2.push(m(s, c).raw_precision); }));
-  barChart('chPrec', l2, [{ label: 'SplatDiff', data: p1, backgroundColor: COL.accent }, { label: 'Raw centres', data: p2, backgroundColor: COL.raw }], { yFmt: (v) => (+v).toFixed(2), max: 1 });
+  ids.forEach((s) => edits.forEach((c) => { l2.push([s, c]); p1.push(m(s, c).precision); p2.push(m(s, c).raw_precision); }));
+  barChart('chPrec', l2, [{ label: 'SplatDiff', data: p1, backgroundColor: COL.accent }, { label: 'Raw centres', data: p2, backgroundColor: COL.raw }], { yFmt: (v) => (+v).toFixed(1), max: 1, labelFmt: (v) => v.toFixed(2) });
   const rows = [];
   S.forEach((s) => s.cases.forEach((c) => { const x = c.metrics; rows.push(`<tr><td>${s.id}</td><td>${c.id}</td><td>${fmt(c.added)}</td><td>${fmt(c.removed)}</td><td>${pct(x.change_rate, 2)}</td><td>${pct(x.raw_change_rate, 2)}</td><td>${x.precision != null ? x.precision.toFixed(2) : '-'}</td><td>${x.recall != null ? x.recall.toFixed(2) : '-'}</td></tr>`); }));
   $('resTable').innerHTML = `<thead><tr><th>Scene</th><th>Case</th><th>Added</th><th>Removed</th><th>Change rate</th><th>Raw baseline</th><th>Precision</th><th>Recall</th></tr></thead><tbody>${rows.join('')}</tbody>`;
@@ -322,8 +350,8 @@ function buildBenchmark() {
   countUp($('bc2'), best.speedup, { dec: 1, suffix: '×' });
   countUp($('bc3'), (serial.t_splat / serial.total) * 100, { dec: 0, suffix: '%' });
   const labels = runs.map(name);
-  barChart('chTime', labels, [{ label: 'Total (ms)', data: runs.map((r) => r.total * 1000), backgroundColor: runs.map(color) }], { yFmt: (v) => `${Math.round(v)} ms` });
-  barChart('chSpeed', labels, [{ label: 'Speedup', data: runs.map((r) => r.speedup), backgroundColor: runs.map(color) }], { yFmt: (v) => `${(+v).toFixed(1)}×` });
+  barChart('chTime', labels, [{ label: 'Total (ms)', data: runs.map((r) => r.total * 1000), backgroundColor: runs.map(color) }], { yFmt: (v) => `${Math.round(v)} ms`, log: true, labelFmt: (v) => (v >= 100 ? `${Math.round(v)} ms` : `${v.toFixed(1)} ms`) });
+  barChart('chSpeed', labels, [{ label: 'Speedup', data: runs.map((r) => r.speedup), backgroundColor: runs.map(color) }], { yFmt: (v) => `${(+v).toFixed(0)}×`, labelFmt: (v) => `${v.toFixed(1)}×` });
   const ms = (x) => (x * 1000).toFixed(1);
   $('benchTable').innerHTML = `<thead><tr><th>Implementation</th><th>Grid</th><th>Splat (ms)</th><th>Compare (ms)</th><th>Reduce (ms)</th><th>Total (ms)</th><th>Speedup</th></tr></thead><tbody>${
     b.runs.map((r) => `<tr><td>${name(r)}</td><td>${r.n}³</td><td>${ms(r.t_splat)}</td><td>${ms(r.t_compare)}</td><td>${ms(r.t_reduce)}</td><td>${ms(r.total)}</td><td>${r.speedup.toFixed(2)}×</td></tr>`).join('')}</tbody>`;
@@ -352,7 +380,7 @@ function buildDiagram() {
 // ---------- boot ----------
 function bind() {
   $$('#nav button').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
-  $('scene').onchange = (e) => { state.scene = e.target.value; if (!currentCase()) state.caseId = currentScene().cases[0].id; renderCases(); load(); };
+  $('scene').onchange = (e) => { state.scene = e.target.value; state.cam = SCENE_CAM[state.scene]?.cam || 'front'; if (!currentCase()) state.caseId = currentScene().cases[0].id; renderCases(); load(); };
   $('overlay').onchange = (e) => { state.overlay = e.target.checked; applyOverlay(); };
   $('onlyChanges').onchange = (e) => { state.only = e.target.checked; applyOverlay(); };
   $('ovOpacity').oninput = (e) => { state.opacity = parseFloat(e.target.value); applyOverlay(); };
@@ -388,6 +416,8 @@ async function main() {
   const q = new URLSearchParams(location.search);
   state.scene = state.manifest.scenes.some((s) => s.id === q.get('scene')) ? q.get('scene') : state.manifest.scenes[0].id;
   if (currentScene().cases.some((c) => c.id === q.get('case'))) state.caseId = q.get('case');
+  state.cam = CAM_DIRS[q.get('cam')] ? q.get('cam') : SCENE_CAM[state.scene]?.cam || 'front';
+  if (q.get('style')) state.style = q.get('style');
   if (q.get('page')) showPage(q.get('page'));
   $('scene').innerHTML = state.manifest.scenes.map((s) => `<option value="${s.id}">${s.id}</option>`).join('');
   $('scene').value = state.scene;
