@@ -166,7 +166,8 @@ int main(int argc, char **argv) {
     size_t nv = (size_t)G.n * G.n * G.n;
 
     cudaEvent_t e0, e1, e2, e3, e4;
-    for (cudaEvent_t *e : {&e0, &e1, &e2, &e3, &e4}) CK(cudaEventCreate(e));
+    CK(cudaEventCreate(&e0)); CK(cudaEventCreate(&e1)); CK(cudaEventCreate(&e2));
+    CK(cudaEventCreate(&e3)); CK(cudaEventCreate(&e4));
     Gauss *dga, *dgb; float *dpa, *dpb; uint8_t *dlab; unsigned long long *dcnt;
     CK(cudaMalloc(&dga, sizeof(Gauss) * na)); CK(cudaMalloc(&dgb, sizeof(Gauss) * nb));
     CK(cudaMalloc(&dpa, nv * 4)); CK(cudaMalloc(&dpb, nv * 4));

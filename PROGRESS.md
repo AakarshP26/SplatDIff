@@ -36,6 +36,16 @@ node scripts/screenshot.mjs out.png 1920 1080 "?scene=biker&case=move" [results|
 
 ## Log
 
+### 2026-11-01 (fix, interactive session)
+
+- First Colab T4 run: nvcc failed on host code (`for (cudaEvent_t *e : {&e0, ...}) cudaEventCreate(e)`,
+  argument type mismatch with the cudaEventCreate overloads). Replaced with five explicit
+  cudaEventCreate calls. NVRTC only checks device code, so this was not caught here.
+- Serial and OpenMP passed the correctness test on Colab. Colab has 2 vCPUs, so OpenMP 2T is
+  only 1.1x to 1.2x there; the CPU scaling story should use a machine with more cores if possible.
+- Aanand to re-run notebooks/colab_benchmark.ipynb after this fix is on GitHub and commit
+  results/benchmark.json.
+
 ### 2026-10-31 (run 2, UI polish run 1)
 
 Push was denied again (403 from the git proxy: repo not in this scheduled task's authorised
