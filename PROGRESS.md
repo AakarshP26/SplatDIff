@@ -43,8 +43,14 @@ node scripts/screenshot.mjs out.png 1920 1080 "?scene=biker&case=move" [results|
   cudaEventCreate calls. NVRTC only checks device code, so this was not caught here.
 - Serial and OpenMP passed the correctness test on Colab. Colab has 2 vCPUs, so OpenMP 2T is
   only 1.1x to 1.2x there; the CPU scaling story should use a machine with more cores if possible.
-- Aanand to re-run notebooks/colab_benchmark.ipynb after this fix is on GitHub and commit
-  results/benchmark.json.
+- Fix pushed by Aanand; Colab T4 re-run succeeded. results/benchmark.json now holds the T4 numbers
+  (biker move): CUDA total 12.2 ms / 17.8 ms / 51.2 ms at 64^3 / 128^3 / 256^3, speedup over serial
+  34.8x / 84.6x / 108.9x; splat kernel dominates (47 of 51 ms at 256^3). CUDA occupied counts differ
+  from CPU by 2 voxels out of 1.29M (float atomic summation order), added/removed within 1.
+- Benchmark page verified with these numbers (results/screenshots/ui_benchmark_cuda_1920.png).
+  UI run 2 to-do: the CUDA bar is invisible on the linear time chart; use a log y axis there.
+- Optional for the report: run OpenMP on an 8-core laptop for a real thread-scaling curve
+  (Colab has 2 vCPUs, so OpenMP 2T is only 1.2x).
 
 ### 2026-10-31 (run 2, UI polish run 1)
 

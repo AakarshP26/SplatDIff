@@ -14,7 +14,7 @@ await page.mouse.move(+w / 2, +h - 2);
 await page.goto(`http://localhost:8765/index.html${query}`);
 await page.waitForFunction(() => window.__splatdiffReady === true, null, { timeout: 180000 });
 await page.waitForTimeout(6000);
-if (['results', 'benchmark', 'how'].includes(action)) { await page.evaluate((a) => document.querySelector(`#nav button[data-page="${a}"]`).click(), action); await page.waitForTimeout(2000); }
+if (['results', 'benchmark', 'how'].includes(action)) { await page.evaluate((a) => document.querySelector(`#nav button[data-page="${a}"]`).click(), action); await page.waitForTimeout(6000); }
 if (action === 'help') { await page.keyboard.press('?'); await page.waitForTimeout(400); }
 if (action === 'present') { await page.evaluate(() => document.getElementById('app').classList.add('present')); await page.waitForTimeout(1200); }
 await page.screenshot({ path: out, timeout: 120000 });
