@@ -270,3 +270,23 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 0; bo
   .cards { grid-template-columns: repeat(2, 1fr); }
   .content { padding: var(--s4) var(--s3) var(--s5); }
 }
+
+.content header.with-tool { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-4, 24px); }
+.content header.with-tool .group { flex: none; }
+.note { margin: 12px 0 0; color: var(--text-3); font-size: var(--fs-sm); line-height: 1.5; }
+.table tr.group-start td { border-top: 1px solid var(--line-2, #2e333b); }
+.table tbody tr:first-child td { border-top: 0; }
+.table tr.sel td { color: var(--text); }
+.nav.instant button { transition: none; }
+.wipe:focus, .wipe:focus-visible { outline: none; }
+.wipe:focus-visible .knob { box-shadow: 0 0 0 3px var(--accent), 0 2px 8px rgba(0,0,0,.5); }
+.stage-legend, .stage-tag, .stage-tools { z-index: 12; }
+.stage-legend { background: rgba(12,14,17,.92); }
+@media (max-height: 800px) {
+  .sidebar .section { padding-top: var(--s1); padding-bottom: var(--s1); }
+  .sidebar .case-desc { font-size: var(--fs-sm); }
+  .sidebar .stat-grid { grid-template-columns: repeat(3, 1fr); gap: var(--s-1); }
+  .sidebar .stat { padding: var(--s-1) var(--s0); }
+  .sidebar .stat .k { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar .stat .v { font-size: 14px; }
+}

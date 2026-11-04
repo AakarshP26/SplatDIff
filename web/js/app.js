@@ -8,6 +8,7 @@ import * as GS from '../vendor/gaussian-splats-3d.module.js';
 const $ = (id) => document.getElementById(id);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const COL = { added: 0xff5a5f, removed: 0xffb547, accent: '#6e8bff', added_s: '#ff5a5f', removed_s: '#ffb547', raw: '#4a515c' };
+const CASE_NAME = { reparam: 'Re-param', color: 'Colour', move: 'Move', delete: 'Delete', copy: 'Copy' };
 const CASE_INFO = {
   reparam: 'Same geometry, different Gaussians: every Gaussian split in two along its major axis, jittered and pruned, as re-training would. Nothing should be reported.',
   color: 'Same Gaussians with shifted colour, as with a lighting change. Colour is ignored, so nothing should be reported.',
@@ -20,8 +21,8 @@ const SCENE_CAM = { guitar: { cam: 'orbit', dy: 0.2, dist: 0.85 }, biker: { cam:
 const CAM_DIRS = { front: [0.25, -0.35, -1], top: [0.02, -1, -0.12], orbit: [1, -0.55, -0.9] };
 
 const state = { manifest: null, bench: null, scene: null, caseId: 'move', wipe: 0.5, overlay: true, style: 'solid',
-  opacity: 0.45, only: false, cam: 'front', rotate: false, page: 'viewer', loading: false };
-let viewerA = null, viewerB = null, boxesA = null, boxesB = null, focus = null, loadToken = 0;
+  opacity: 0.3, only: false, clean: true, cam: 'front', rotate: false, page: 'viewer', loading: false, benchN: null };
+let viewerA = null, viewerB = null, boxesA = null, boxesB = null, focus = null, changes = null, loadToken = 0;
 
 // ---------- small helpers ----------
 const pct = (x, d = 1) => (x == null ? 'n/a' : `${(x * 100).toFixed(d)}%`);
@@ -62,8 +63,17 @@ function surfaceVoxels(voxels) {
   const nb = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
   return voxels.filter(([i, j, k]) => nb.some(([a, b, c]) => !set.has(key(i + a, j + b, k + c))));
 }
+// Display-only filter: drops voxels with no 26-neighbour. Reported counts and metrics are not affected.
+function dropIsolated(voxels) {
+  const key = (i, j, k) => (i * 1024 + j) * 1024 + k;
+  const set = new Set(voxels.map((v) => key(v[0], v[1], v[2])));
+  return voxels.filter(([i, j, k]) => {
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) if ((a || b || c) && set.has(key(i + a, j + b, k + c))) return true;
+    return false;
+  });
+}
 function makeBoxes(voxels, g, color) {
-  voxels = surfaceVoxels(voxels);
+  voxels = surfaceVoxels(state.clean ? dropIsolated(voxels) : voxels);
   const geo = new THREE.BoxGeometry(g.h[0] * 0.92, g.h[1] * 0.92, g.h[2] * 0.92);
   const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: state.opacity, depthWrite: false });
   const mesh = new THREE.InstancedMesh(geo, mat, Math.max(voxels.length, 1));
@@ -76,6 +86,14 @@ function makeBoxes(voxels, g, color) {
   mesh.renderOrder = 10;
   mesh.userData = { base: new THREE.Color(color), heat: voxels.length ? heatColors(voxels) : [] };
   return mesh;
+}
+function rebuildBoxes() {
+  if (boxesA) { viewerA.threeScene.remove(boxesA); boxesA.geometry.dispose(); boxesA.material.dispose(); }
+  if (boxesB) { viewerB.threeScene.remove(boxesB); boxesB.geometry.dispose(); boxesB.material.dispose(); }
+  boxesA = makeBoxes(changes.removed, changes.grid, COL.removed);
+  boxesB = makeBoxes(changes.added, changes.grid, COL.added);
+  viewerA.threeScene.add(boxesA); viewerB.threeScene.add(boxesB);
+  applyOverlay();
 }
 function applyOverlay() {
   for (const b of [boxesA, boxesB]) {
@@ -113,6 +131,7 @@ function setCamera(name, announce = false) {
   if (ctl) { ctl.target.set(...p.lookAt); ctl.update(); } else cam.lookAt(...p.lookAt);
   if (announce) toast(`Camera: ${name === 'orbit' ? 'three-quarter' : name}`);
 }
+const resetCamera = () => setCamera(SCENE_CAM[state.scene]?.cam || 'front', true);
 function setRotate(on) {
   state.rotate = on;
   $('autoRotate').checked = on; $('btnRotate').setAttribute('aria-pressed', String(on));
@@ -136,7 +155,7 @@ function updateCaseInfo() {
   const idx = sc.cases.indexOf(c) + 1;
   $('caseKey').textContent = `key ${idx}`;
   $('caseDesc').textContent = CASE_INFO[c.id] || '';
-  $('tagCase').textContent = c.id;
+  $('tagCase').textContent = CASE_NAME[c.id];
   $('stAdded').textContent = fmt(c.added); $('stRemoved').textContent = fmt(c.removed);
   $('stRate').textContent = pct(m.change_rate, 2); $('stRaw').textContent = pct(m.raw_change_rate, 2);
   $('stPrec').textContent = m.precision != null ? m.precision.toFixed(2) : 'n/a';
@@ -148,7 +167,7 @@ async function load() {
   updateCaseInfo();
   const url = new URL(location); url.searchParams.set('scene', state.scene); url.searchParams.set('case', state.caseId); history.replaceState(null, '', url);
   $('stage').classList.add('fading');
-  setLoading(true, 0, `Loading ${state.scene}, ${state.caseId}`, !first);
+  setLoading(true, 0, `Loading ${state.scene}, ${CASE_NAME[state.caseId]}`, !first);
   if (!first) await new Promise((r) => setTimeout(r, 250));
   await disposeViewers();
   if (token !== loadToken) return;
@@ -164,10 +183,8 @@ async function load() {
   await viewerB.addSplatScene(`${base}/${state.caseId}.ply`, { format: GS.SceneFormat.Ply, showLoadingUI: false,
     onProgress: (p) => setLoading(true, 0.5 + p / 200, 'Loading scene at t+1', !first) });
   if (token !== loadToken) return;
-  boxesA = makeBoxes(ch.removed, ch.grid, COL.removed);
-  boxesB = makeBoxes(ch.added, ch.grid, COL.added);
-  viewerA.threeScene.add(boxesA); viewerB.threeScene.add(boxesB);
-  applyOverlay();
+  changes = ch;
+  rebuildBoxes();
   if (state.page === 'viewer') { viewerA.start(); viewerB.start(); }
   setCamera(state.cam); setRotate(state.rotate);
   setLoading(false, 1);
@@ -214,8 +231,8 @@ function renderCases() {
   $('cases').innerHTML = '';
   sc.cases.forEach((c, i) => {
     const b = document.createElement('button');
-    b.textContent = { reparam: 'Re-param', color: 'Colour' }[c.id] || c.id[0].toUpperCase() + c.id.slice(1);
-    b.dataset.tip = `${c.id}: ${c.added} added, ${c.removed} removed (key ${i + 1})`;
+    b.textContent = CASE_NAME[c.id];
+    b.dataset.tip = `${CASE_NAME[c.id]}: ${c.added} added, ${c.removed} removed (key ${i + 1})`;
     b.setAttribute('aria-pressed', String(c.id === state.caseId));
     b.onclick = () => selectCase(c.id);
     $('cases').appendChild(b);
@@ -223,6 +240,7 @@ function renderCases() {
 }
 function showPage(name) {
   state.page = name;
+  $('nav').classList.add('instant'); setTimeout(() => $('nav').classList.remove('instant'), 60);
   $$('#nav button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.page === name)));
   $$('.page').forEach((p) => p.classList.toggle('active', p.id === `page-${name}`));
   // pause splat rendering while a content page covers the stage
@@ -291,6 +309,17 @@ function barChart(id, labels, datasets, { yFmt = (v) => v, max, log = false, lab
   });
 }
 
+function lineChart(id, labels, series) {
+  if (!window.Chart) return;
+  if (charts[id]) charts[id].destroy();
+  const f = (v) => (v >= 100 ? `${Math.round(v)} ms` : `${(+v).toFixed(1)} ms`);
+  charts[id] = new Chart($(id), { type: 'line',
+    data: { labels, datasets: series.map((d) => ({ label: d.label, data: d.data, borderColor: d.col, backgroundColor: d.col, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, tension: 0 })) },
+    options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 8, right: 16 } },
+      plugins: { legend: { position: 'bottom', labels: { padding: 16 } }, tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${f(c.parsed.y)}` } } },
+      scales: { x: { offset: true, grid: { display: false } }, y: { type: 'logarithmic', ticks: { callback: (v) => ([1, 10, 100, 1000, 10000, 100000].includes(+v) ? `${v} ms` : '') }, grid: { color: '#1a1d22' } } } } });
+}
+
 function buildResults() {
   const S = state.manifest.scenes;
   const m = (s, c) => (S.find((x) => x.id === s)?.cases.find((x) => x.id === c)?.metrics) || {};
@@ -320,7 +349,7 @@ function buildResults() {
   ids.forEach((s) => edits.forEach((c) => { l2.push([s, c]); p1.push(m(s, c).precision); p2.push(m(s, c).raw_precision); }));
   barChart('chPrec', l2, [{ label: 'SplatDiff', data: p1, backgroundColor: COL.accent }, { label: 'Raw centres', data: p2, backgroundColor: COL.raw }], { yFmt: (v) => (+v).toFixed(1), max: 1, labelFmt: (v) => v.toFixed(2) });
   const rows = [];
-  S.forEach((s) => s.cases.forEach((c) => { const x = c.metrics; rows.push(`<tr><td>${s.id}</td><td>${c.id}</td><td>${fmt(c.added)}</td><td>${fmt(c.removed)}</td><td>${pct(x.change_rate, 2)}</td><td>${pct(x.raw_change_rate, 2)}</td><td>${x.precision != null ? x.precision.toFixed(2) : '-'}</td><td>${x.recall != null ? x.recall.toFixed(2) : '-'}</td></tr>`); }));
+  S.forEach((s) => s.cases.forEach((c, i) => { const x = c.metrics; rows.push(`<tr class="${i === 0 ? 'group-start' : ''}"><td>${i === 0 ? s.id : ''}</td><td>${CASE_NAME[c.id]}</td><td>${fmt(c.added)}</td><td>${fmt(c.removed)}</td><td>${pct(x.change_rate, 2)}</td><td>${pct(x.raw_change_rate, 2)}</td><td>${x.precision != null ? x.precision.toFixed(2) : '-'}</td><td>${x.recall != null ? x.recall.toFixed(2) : '-'}</td></tr>`); }));
   $('resTable').innerHTML = `<thead><tr><th>Scene</th><th>Case</th><th>Added</th><th>Removed</th><th>Change rate</th><th>Raw baseline</th><th>Precision</th><th>Recall</th></tr></thead><tbody>${rows.join('')}</tbody>`;
 }
 
@@ -333,8 +362,12 @@ function buildBenchmark() {
   }
   const hasCuda = b.runs.some((r) => r.impl === 'cuda');
   $('benchNotice').innerHTML = hasCuda ? '' : `<div class="notice">${info}<div>CPU numbers from a ${b.cpu_count}-core machine. CUDA timings are pending: run <code>notebooks/colab_benchmark.ipynb</code> on a Colab GPU and commit <code>results/benchmark.json</code>.</div></div>`;
-  const n = Math.max(...b.runs.map((r) => r.n));
+  const sizes = [...new Set(b.runs.map((r) => r.n))].sort((x, y) => x - y);
+  if (!sizes.includes(state.benchN)) state.benchN = sizes[sizes.length - 1];
+  const n = state.benchN;
   const runs = b.runs.filter((r) => r.n === n);
+  $('benchGrid').innerHTML = sizes.map((s) => `<button data-n="${s}" aria-pressed="${s === n}">${s}³</button>`).join('');
+  $$('#benchGrid button').forEach((x) => (x.onclick = () => { state.benchN = +x.dataset.n; buildBenchmark(); }));
   const name = (r) => (r.impl === 'serial' ? 'Serial' : r.impl === 'openmp' ? `OpenMP ${r.threads}T` : 'CUDA');
   const color = (r) => (r.impl === 'serial' ? '#5a6270' : r.impl === 'openmp' ? COL.accent : '#3ecf8e');
   $('benchSub').textContent = `${b.scene}, ${b.case}, ${n}³ grid, ${fmt(runs[0].gaussians_a + runs[0].gaussians_b)} Gaussians. Lower is better.`;
@@ -352,9 +385,15 @@ function buildBenchmark() {
   const labels = runs.map(name);
   barChart('chTime', labels, [{ label: 'Total (ms)', data: runs.map((r) => r.total * 1000), backgroundColor: runs.map(color) }], { yFmt: (v) => `${Math.round(v)} ms`, log: true, labelFmt: (v) => (v >= 100 ? `${Math.round(v)} ms` : `${v.toFixed(1)} ms`) });
   barChart('chSpeed', labels, [{ label: 'Speedup', data: runs.map((r) => r.speedup), backgroundColor: runs.map(color) }], { yFmt: (v) => `${(+v).toFixed(0)}×`, labelFmt: (v) => `${v.toFixed(1)}×` });
+  const series = [['serial', 1, 'Serial', '#5a6270'], ['openmp', Math.max(...b.runs.filter((r) => r.impl === 'openmp').map((r) => r.threads)), '', COL.accent], ['cuda', null, 'CUDA', '#3ecf8e']]
+    .map(([impl, th, label, col]) => { const pts = sizes.map((s) => b.runs.find((r) => r.n === s && r.impl === impl && (th == null || r.threads === th))); return { label: label || `OpenMP ${th}T`, col, data: pts.map((r) => (r ? r.total * 1000 : null)) }; })
+    .filter((d) => d.data.some((v) => v != null));
+  lineChart('chScale', sizes.map((s) => `${s}³`), series);
+  const h2d = runs.find((r) => r.t_h2d != null);
+  $('benchNote').textContent = h2d ? `CUDA times are kernel time on a ${h2d.device}; the one-off upload to the GPU (${(h2d.t_h2d * 1000).toFixed(1)} ms at ${n}³) is not included. OpenMP thread count is limited by the ${b.cpu_count} vCPUs of the benchmark machine.` : '';
   const ms = (x) => (x * 1000).toFixed(1);
   $('benchTable').innerHTML = `<thead><tr><th>Implementation</th><th>Grid</th><th>Splat (ms)</th><th>Compare (ms)</th><th>Reduce (ms)</th><th>Total (ms)</th><th>Speedup</th></tr></thead><tbody>${
-    b.runs.map((r) => `<tr><td>${name(r)}</td><td>${r.n}³</td><td>${ms(r.t_splat)}</td><td>${ms(r.t_compare)}</td><td>${ms(r.t_reduce)}</td><td>${ms(r.total)}</td><td>${r.speedup.toFixed(2)}×</td></tr>`).join('')}</tbody>`;
+    b.runs.map((r) => `<tr class="${r.impl === 'serial' ? 'group-start' : ''}${r.n === n ? ' sel' : ''}"><td>${name(r)}</td><td>${r.n}³</td><td>${ms(r.t_splat)}</td><td>${ms(r.t_compare)}</td><td>${ms(r.t_reduce)}</td><td>${ms(r.total)}</td><td>${r.speedup.toFixed(2)}×</td></tr>`).join('')}</tbody>`;
 }
 
 function buildDiagram() {
@@ -382,13 +421,14 @@ function bind() {
   $$('#nav button').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
   $('scene').onchange = (e) => { state.scene = e.target.value; state.cam = SCENE_CAM[state.scene]?.cam || 'front'; if (!currentCase()) state.caseId = currentScene().cases[0].id; renderCases(); load(); };
   $('overlay').onchange = (e) => { state.overlay = e.target.checked; applyOverlay(); };
+  $('hideIsolated').onchange = (e) => { state.clean = e.target.checked; if (viewerA && changes) rebuildBoxes(); };
   $('onlyChanges').onchange = (e) => { state.only = e.target.checked; applyOverlay(); };
   $('ovOpacity').oninput = (e) => { state.opacity = parseFloat(e.target.value); applyOverlay(); };
   $$('#ovStyle button').forEach((b) => (b.onclick = () => { state.style = b.dataset.style; applyOverlay(); }));
   $$('[data-cam]').forEach((b) => (b.onclick = () => setCamera(b.dataset.cam, true)));
   $('autoRotate').onchange = (e) => setRotate(e.target.checked);
   $('btnRotate').onclick = () => setRotate(!state.rotate);
-  $('btnReset').onclick = () => { setCamera('front', true); };
+  $('btnReset').onclick = resetCamera;
   $('btnSidebar').onclick = toggleSidebar;
   $('btnPresent').onclick = togglePresent;
   $('btnHelp').onclick = (e) => { e.stopPropagation(); $('help').classList.toggle('open'); };
@@ -397,9 +437,9 @@ function bind() {
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'SELECT' || (e.target.tagName === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'range')) return;
     const sc = currentScene(), k = parseInt(e.key, 10);
-    if (k >= 1 && k <= sc.cases.length) { selectCase(sc.cases[k - 1].id); toast(`Case ${k}: ${sc.cases[k - 1].id}`); }
+    if (k >= 1 && k <= sc.cases.length) { selectCase(sc.cases[k - 1].id); toast(`Case ${k}: ${CASE_NAME[sc.cases[k - 1].id]}`); }
     else if (e.key === 'o' || e.key === 'O') { state.overlay = !state.overlay; applyOverlay(); toast(`Overlay ${state.overlay ? 'on' : 'off'}`); }
-    else if (e.key === 'r' || e.key === 'R') setCamera('front', true);
+    else if (e.key === 'r' || e.key === 'R') resetCamera();
     else if (e.key === ' ') { e.preventDefault(); setRotate(!state.rotate); toast(`Auto-rotate ${state.rotate ? 'on' : 'off'}`); }
     else if (e.key === 'p' || e.key === 'P') togglePresent();
     else if (e.key === '?') $('help').classList.toggle('open');
@@ -418,6 +458,7 @@ async function main() {
   if (currentScene().cases.some((c) => c.id === q.get('case'))) state.caseId = q.get('case');
   state.cam = CAM_DIRS[q.get('cam')] ? q.get('cam') : SCENE_CAM[state.scene]?.cam || 'front';
   if (q.get('style')) state.style = q.get('style');
+  if (q.get('only') === '1') state.only = true;
   if (q.get('page')) showPage(q.get('page'));
   $('scene').innerHTML = state.manifest.scenes.map((s) => `<option value="${s.id}">${s.id}</option>`).join('');
   $('scene').value = state.scene;

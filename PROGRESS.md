@@ -4,7 +4,7 @@ STATUS: IN PROGRESS
 
 ## Next task
 
-Task 8, UI polish run 3. See "UI polish run 3 to-do" in the 2026-11-01 (run 3) log entry.
+Task 9 (start.sh / start.bat launcher). Before that, spend a few minutes on the unverified UI items in the 2026-11-04 log entry. Task 8 stays open until those pass.
 
 ## Task checklist
 
@@ -15,7 +15,7 @@ Task 8, UI polish run 3. See "UI polish run 3 to-do" in the 2026-11-01 (run 3) l
 - [x] 5. CUDA kernels, NVRTC check, notebooks/colab_benchmark.ipynb (Colab run pending, see below)
 - [x] 6. Export change voxels and scenes for the viewer
 - [x] 7. Web viewer basics
-- [~] 8. UI polish (presentation quality, at least two runs): run 1 done 2026-10-31, run 2 done 2026-11-01
+- [~] 8. UI polish (presentation quality, at least two runs): run 1 done 2026-10-31, run 2 done 2026-11-01, run 3 done 2026-11-04 (a few checks still open)
 - [ ] 9. One-click launcher (start.sh / start.bat) and README instructions
 - [ ] 10. Results figures for report and slides
 - [ ] 11. Final QA pass, set STATUS: COMPLETE
@@ -35,6 +35,43 @@ node scripts/screenshot.mjs out.png 1920 1080 "?scene=biker&case=move" [results|
 ```
 
 ## Log
+
+### 2026-11-04 (run 4, UI polish run 3)
+
+Push was denied again (403 from the git proxy: AakarshP26/SplatDIff is not in this scheduled task's
+authorised sources). Work is committed locally and delivered as splatdiff_2026-11-04.bundle.
+
+Done:
+- Results table: readable case names (Re-param, Colour), scene shown once per group. CASE_NAME
+  table in app.js used everywhere (segmented control, tags, toasts, loading text).
+- Benchmark: 64/128/256 grid selector, new scaling line chart (log axis), kernel table grouped by
+  grid size, note stating that CUDA times exclude the GPU upload (t_h2d) and that OpenMP is limited
+  by 2 vCPUs. The quoted CUDA speedups (up to 108.9x) are kernel time only.
+- Reset camera (R and button) now returns to the scene's default view, not always front.
+- Wipe: focus ring moved to the knob (it drew two full-height blue lines after dragging). Legend,
+  tags and tools now sit above the wipe line.
+- Overlay: default opacity 0.3, new "Hide isolated voxels" toggle, on by default. Display only:
+  counts and metrics are unchanged.
+- Sidebar at 720p height: compact 3-column stats, whole sidebar now fits at 1280x720.
+- Tab highlight: animations were stuck at time 0 in headless, so the change of selected tab now
+  skips the transition (.nav.instant).
+- scripts/ui_check.mjs: one-session interaction check. ?only=1 URL param.
+
+Tests: benchmark page at 1280x720 OK. Viewer at 1280x720 OK for biker delete, help popover, focus
+ring, legend. Wipe drag PASS, auto-rotate PASS and presentation class PASS on the run before the last
+edits. No console errors logged by that run's earlier steps, but the script was killed before printing.
+
+Not verified with the final code: heat style, only-changes, copy case, presentation layout. ui_check.mjs
+timed out at 200 s (the shot after heat is very slow under swiftshader), and the heat screenshot was
+stale (still showed help and Solid). Press p for real fullscreen hangs headless screenshots.
+Not checked in a real browser: all interactions. Please try them once on a laptop.
+
+Next: re-run those checks one screenshot per process, then task 9. Note web/data is gitignored, so
+the launcher must build it on first run.
+
+Action for Aanand: same as before. Push the bundle: inside a clone of the repo,
+`git pull /path/to/splatdiff_2026-11-04.bundle main && git push origin main`. To stop needing this,
+add AakarshP26/SplatDIff to this scheduled task's GitHub sources.
 
 ### 2026-11-01 (run 3, UI polish run 2)
 

@@ -15,6 +15,10 @@ await page.goto(`http://localhost:8765/index.html${query}`);
 await page.waitForFunction(() => window.__splatdiffReady === true, null, { timeout: 180000 });
 await page.waitForTimeout(6000);
 if (['results', 'benchmark', 'how'].includes(action)) { await page.evaluate((a) => document.querySelector(`#nav button[data-page="${a}"]`).click(), action); await page.waitForTimeout(6000); }
+if (action === 'scroll') { await page.evaluate(() => { document.querySelector('#nav button[data-page="benchmark"]').click(); }); await page.waitForTimeout(6000); await page.evaluate(() => { const c = document.querySelector('.page.active'); c.scrollTop = c.scrollHeight; [...document.querySelectorAll('.page.active *')].forEach((e) => { if (e.scrollHeight > e.clientHeight + 4) e.scrollTop = e.scrollHeight; }); }); await page.waitForTimeout(1500); }
+if (action === 'mid') { await page.evaluate(() => document.querySelector('#nav button[data-page="benchmark"]').click()); await page.waitForTimeout(5000);
+  console.log(await page.evaluate(() => [...document.querySelectorAll('#nav button')].map((b) => [b.textContent, b.getAttribute('aria-selected'), getComputedStyle(b).backgroundColor, b.getAnimations().map((a) => a.playState + ':' + a.currentTime).join()].join(' | ')).join('\n')));
+  await page.evaluate(() => document.getElementById('chScale').scrollIntoView({ block: 'center' })); await page.waitForTimeout(1200); }
 if (action === 'help') { await page.keyboard.press('?'); await page.waitForTimeout(400); }
 if (action === 'present') { await page.evaluate(() => document.getElementById('app').classList.add('present')); await page.waitForTimeout(1200); }
 await page.screenshot({ path: out, timeout: 120000 });
