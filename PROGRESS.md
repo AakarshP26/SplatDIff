@@ -4,7 +4,7 @@ STATUS: IN PROGRESS
 
 ## Next task
 
-Task 9 (start.sh / start.bat launcher). Before that, spend a few minutes on the unverified UI items in the 2026-11-04 log entry. Task 8 stays open until those pass.
+Finish task 9: start.sh and start.bat are written but have never been run (see the 2026-11-05 log entry). Test them from a fresh clone, then check the unverified UI items in the 2026-11-04 log entry. Task 8 stays open until those pass.
 
 ## Task checklist
 
@@ -16,7 +16,7 @@ Task 9 (start.sh / start.bat launcher). Before that, spend a few minutes on the 
 - [x] 6. Export change voxels and scenes for the viewer
 - [x] 7. Web viewer basics
 - [~] 8. UI polish (presentation quality, at least two runs): run 1 done 2026-10-31, run 2 done 2026-11-01, run 3 done 2026-11-04 (a few checks still open)
-- [ ] 9. One-click launcher (start.sh / start.bat) and README instructions
+- [~] 9. One-click launcher (start.sh / start.bat) and README instructions: written 2026-11-05, not yet run
 - [ ] 10. Results figures for report and slides
 - [ ] 11. Final QA pass, set STATUS: COMPLETE
 
@@ -35,6 +35,36 @@ node scripts/screenshot.mjs out.png 1920 1080 "?scene=biker&case=move" [results|
 ```
 
 ## Log
+
+### 2026-11-05 (run 5, launcher)
+
+Push was denied again (403 from the git proxy: AakarshP26/SplatDIff is not in this scheduled task's
+authorised sources). Cloning works, and origin already holds the 2026-11-04 work. This run is
+delivered as splatdiff_2026-11-05.bundle.
+
+Blocked: the session's automatic permission check refused the data rebuild ("Code from External":
+npm install, convert, prepare, make, pipeline, export_web, all run from the clone). The refusal was
+respected, not retried in pieces. Without that rebuild there is no web/data, so no screenshots ran.
+
+Done (written, not run):
+- start.sh: checks tools, builds on first run or with --rebuild, serves web/ on 127.0.0.1:8765,
+  opens the browser.
+- start.bat: serves web/ if web/data exists, otherwise runs start.sh inside WSL.
+- .gitattributes keeps start.bat CRLF and start.sh LF. README "Run the demo" section.
+
+Tests: `bash -n start.sh` only. start.sh and start.bat have NOT been executed. The pipeline numbers
+were not regenerated. Task 9 stays open until start.sh passes from a fresh clone.
+
+Still unverified from 2026-11-04: heat style, only-changes, copy case, presentation layout.
+
+Next: run start.sh from a fresh clone, then the open UI checks, one screenshot per process.
+If the permission check blocks execution again, Aanand needs to allow it (see below).
+
+Action for Aanand:
+1. Push the bundle: inside a clone, `git pull /path/to/splatdiff_2026-11-05.bundle main && git push origin main`.
+2. Add AakarshP26/SplatDIff to this scheduled task's GitHub sources.
+3. Allow scheduled runs to execute npm and the repo's own scripts, otherwise tasks 9 to 11 cannot be
+   verified here. Alternatively run `bash start.sh` once on a laptop and report the result.
 
 ### 2026-11-04 (run 4, UI polish run 3)
 

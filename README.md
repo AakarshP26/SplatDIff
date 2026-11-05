@@ -33,7 +33,18 @@ ICCV 2025) detect changes from rendered images. SplatDiff works directly on the 
 | `kernels/cuda/splatdiff.cu` | CUDA kernels; `nvrtc_check.py` compile-checks without a GPU |
 | `notebooks/colab_benchmark.ipynb` | GPU benchmark on Google Colab |
 
-## Quick start (Linux / macOS, needs Node 18+, Python 3 with numpy and scipy, gcc)
+## Run the demo
+
+Linux, macOS or WSL: `bash start.sh`. Windows: double-click `start.bat`.
+
+The first run downloads nothing extra beyond the npm packages, builds the viewer data (a few
+minutes) and opens http://localhost:8765/. Later runs start at once. `bash start.sh --rebuild`
+regenerates everything, and `PORT=9000 bash start.sh` selects another port.
+
+Requirements for the first run: Node 18+, Python 3 with numpy and scipy, gcc, make. On Windows the
+first run uses WSL for these. Once `web/data` exists, only Python is needed.
+
+## Manual steps (Linux / macOS, needs Node 18+, Python 3 with numpy and scipy, gcc)
 
 ```bash
 bash scripts/convert.sh            # download if needed, convert scenes
