@@ -64,13 +64,27 @@ function surfaceVoxels(voxels) {
   return voxels.filter(([i, j, k]) => nb.some(([a, b, c]) => !set.has(key(i + a, j + b, k + c))));
 }
 // Display-only filter: drops voxels with no 26-neighbour. Reported counts and metrics are not affected.
+// Display filter: drop 26-connected clusters smaller than MIN_CLUSTER voxels (speckle noise).
+// Counts and metrics in the sidebar are unchanged.
+const MIN_CLUSTER = 8;
 function dropIsolated(voxels) {
   const key = (i, j, k) => (i * 1024 + j) * 1024 + k;
-  const set = new Set(voxels.map((v) => key(v[0], v[1], v[2])));
-  return voxels.filter(([i, j, k]) => {
-    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) if ((a || b || c) && set.has(key(i + a, j + b, k + c))) return true;
-    return false;
-  });
+  const idx = new Map(voxels.map((v, n) => [key(v[0], v[1], v[2]), n]));
+  const comp = new Int32Array(voxels.length).fill(-1);
+  const keep = new Uint8Array(voxels.length);
+  for (let s = 0; s < voxels.length; s++) {
+    if (comp[s] >= 0) continue;
+    const members = [s]; comp[s] = s;
+    for (let q = 0; q < members.length; q++) {
+      const [i, j, k] = voxels[members[q]];
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let c = -1; c <= 1; c++) {
+        const n = idx.get(key(i + a, j + b, k + c));
+        if (n !== undefined && comp[n] < 0) { comp[n] = s; members.push(n); }
+      }
+    }
+    if (members.length >= MIN_CLUSTER) members.forEach((n) => { keep[n] = 1; });
+  }
+  return voxels.filter((v, n) => keep[n]);
 }
 function makeBoxes(voxels, g, color) {
   voxels = surfaceVoxels(state.clean ? dropIsolated(voxels) : voxels);

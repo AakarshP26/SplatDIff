@@ -44,6 +44,8 @@ regenerates everything, and `PORT=9000 bash start.sh` selects another port.
 Requirements for the first run: Node 18+, Python 3 with numpy and scipy, gcc, make. On Windows the
 first run uses WSL for these. Once `web/data` exists, only Python is needed.
 
+Tested 2026-11-08 from a fresh clone on Linux: the first run builds everything in about 100 s.
+
 ## Manual steps (Linux / macOS, needs Node 18+, Python 3 with numpy and scipy, gcc)
 
 ```bash
@@ -52,7 +54,11 @@ python3 python/prepare.py          # test cases + binaries
 make -C kernels                    # serial + OpenMP
 python3 python/test_kernels.py     # correctness vs NumPy reference
 python3 python/pipeline.py         # results/*.json
+python3 python/export_web.py       # web/data/*
+python3 python/figures.py          # results/figures/*.png (needs matplotlib)
 ```
+
+Report and slide figures: results/figures/ (see its README) and results/screenshots/.
 
 ## Method
 

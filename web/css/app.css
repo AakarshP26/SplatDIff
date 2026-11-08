@@ -289,4 +289,9 @@ input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: 0; bo
   .sidebar .stat { padding: var(--s-1) var(--s0); }
   .sidebar .stat .k { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sidebar .stat .v { font-size: 14px; }
+  .sidebar .row { min-height: 26px; }
+  .sidebar .row + .row { margin-top: 4px; }
+  .sidebar .section h3 { margin-bottom: 6px; }
+  .sidebar .case-desc { line-height: 1.4; margin: 0; }
+  .sidebar .btn { height: 30px; }
 }

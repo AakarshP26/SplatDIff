@@ -4,7 +4,10 @@ STATUS: IN PROGRESS
 
 ## Next task
 
-Finish task 9: start.sh and start.bat are written but have never been run (see the 2026-11-05 log entry). Test them from a fresh clone, then check the unverified UI items in the 2026-11-04 log entry. Task 8 stays open until those pass.
+Task 10 is mostly done (four figures in results/figures/). Next run: optionally add a pipeline
+diagram PNG for the report (export the How it works SVG), then start task 11 (final QA pass from a
+fresh clone: start.sh, test_kernels.py, figures.py, screenshots of every page at 1920x1080 and
+1280x720). start.bat still needs one test on a Windows laptop (Aanand or Aakarsh).
 
 ## Task checklist
 
@@ -15,9 +18,9 @@ Finish task 9: start.sh and start.bat are written but have never been run (see t
 - [x] 5. CUDA kernels, NVRTC check, notebooks/colab_benchmark.ipynb (Colab run pending, see below)
 - [x] 6. Export change voxels and scenes for the viewer
 - [x] 7. Web viewer basics
-- [~] 8. UI polish (presentation quality, at least two runs): run 1 done 2026-10-31, run 2 done 2026-11-01, run 3 done 2026-11-04 (a few checks still open)
-- [~] 9. One-click launcher (start.sh / start.bat) and README instructions: written 2026-11-05, not yet run
-- [ ] 10. Results figures for report and slides
+- [x] 8. UI polish (presentation quality): runs on 2026-10-31, 11-01, 11-04, open checks closed 2026-11-08
+- [x] 9. One-click launcher and README: start.sh passes from a fresh clone (2026-11-08); start.bat untested (no Windows here)
+- [~] 10. Results figures for report and slides: python/figures.py, 4 PNGs (2026-11-08)
 - [ ] 11. Final QA pass, set STATUS: COMPLETE
 
 ## How to rebuild everything (generated files are gitignored)
@@ -31,10 +34,39 @@ python3 python/test_kernels.py guitar move 48
 python3 python/pipeline.py         # results/<scene>.json, results/summary.json
 python3 python/export_web.py       # web/data/*
 cd web && python3 -m http.server 8765
+python3 python/figures.py          # results/figures/*.png
 node scripts/screenshot.mjs out.png 1920 1080 "?scene=biker&case=move" [results|benchmark|how|help|present]
 ```
 
 ## Log
+
+### 2026-11-08 (run 6, launcher test, UI checks, figures)
+
+Push was denied again (403 from the git proxy: AakarshP26/SplatDIff is not in this scheduled task's
+authorised sources). Work is committed locally and delivered as splatdiff_2026-11-08.bundle.
+
+Done:
+- Ran `bash start.sh` from a fresh clone: all six build steps passed in about 100 s, server answered
+  on 127.0.0.1:8765, data/manifest.json served. Rebuilt metrics identical to the committed
+  results (only timings differ, committed timings kept). xdg-open is absent here, so the browser
+  open step was a no-op as designed.
+- Closed the open UI checks from 2026-11-04 with headless screenshots: heat style (guitar copy,
+  1920), only-changes (biker move, 1280x720), copy case, presentation layout (sidebar hidden). All OK.
+- Sidebar at 1280x720 overflowed by about 100 px with the longer move description: tighter rows,
+  headings and button in the max-height 800px block. Whole sidebar now fits.
+- "Hide isolated voxels" now drops 26-connected clusters under 8 voxels (was: single voxels with no
+  neighbour). Removes the speckle streaks above the biker in move/delete. Display only.
+- Task 10: python/figures.py writes results/figures/change_rate.png, precision_recall.png,
+  benchmark_speedup.png, kernel_breakdown.png (light theme, 200 dpi) plus a README with key numbers.
+- Screenshots refreshed: ui_viewer_guitar_move_1920, ui_viewer_guitar_copy_heat_1920,
+  ui_viewer_biker_move_1280, ui_viewer_biker_delete_1280, ui_present_biker_delete_1280.
+
+Tests: start.sh fresh-clone build PASS; 5 screenshots, no console errors printed; figures.py PASS.
+
+Action for Aanand:
+1. Push the bundle: inside a clone, `git pull /path/to/splatdiff_2026-11-08.bundle main && git push origin main`.
+2. Add AakarshP26/SplatDIff to this scheduled task's GitHub sources so runs can push directly.
+3. Double-click start.bat once on a Windows laptop and report whether it works.
 
 ### 2026-11-05 (run 5, launcher)
 
