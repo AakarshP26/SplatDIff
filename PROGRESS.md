@@ -4,10 +4,10 @@ STATUS: IN PROGRESS
 
 ## Next task
 
-Task 10 is mostly done (four figures in results/figures/). Next run: optionally add a pipeline
-diagram PNG for the report (export the How it works SVG), then start task 11 (final QA pass from a
-fresh clone: start.sh, test_kernels.py, figures.py, screenshots of every page at 1920x1080 and
-1280x720). start.bat still needs one test on a Windows laptop (Aanand or Aakarsh).
+Task 10 is done. Next run: continue task 11 (final QA). Remaining QA items: Viewer at 1280x720 for
+biker and guitar in all five cases, presentation mode at 1920x1080, keyboard shortcuts (1-5, O, R,
+space, P, ?) via scripts/ui_check.mjs, README read-through against the actual commands, then set
+STATUS: COMPLETE. start.bat still needs one test on a Windows laptop (Aanand or Aakarsh).
 
 ## Task checklist
 
@@ -20,8 +20,8 @@ fresh clone: start.sh, test_kernels.py, figures.py, screenshots of every page at
 - [x] 7. Web viewer basics
 - [x] 8. UI polish (presentation quality): runs on 2026-10-31, 11-01, 11-04, open checks closed 2026-11-08
 - [x] 9. One-click launcher and README: start.sh passes from a fresh clone (2026-11-08); start.bat untested (no Windows here)
-- [~] 10. Results figures for report and slides: python/figures.py, 4 PNGs (2026-11-08)
-- [ ] 11. Final QA pass, set STATUS: COMPLETE
+- [x] 10. Results figures for report and slides: python/figures.py, 4 PNGs (2026-11-08), pipeline_diagram.png (2026-11-10)
+- [~] 11. Final QA pass (started 2026-11-10)
 
 ## How to rebuild everything (generated files are gitignored)
 
@@ -35,10 +35,34 @@ python3 python/pipeline.py         # results/<scene>.json, results/summary.json
 python3 python/export_web.py       # web/data/*
 cd web && python3 -m http.server 8765
 python3 python/figures.py          # results/figures/*.png
+node scripts/export_diagram.mjs        # results/figures/pipeline_diagram.png (server running)
 node scripts/screenshot.mjs out.png 1920 1080 "?scene=biker&case=move" [results|benchmark|how|help|present]
 ```
 
 ## Log
+
+### 2026-11-10 (run 7, task 10 finish, task 11 start)
+
+Push was denied again (403 from the git proxy: AakarshP26/SplatDIff is not in this scheduled task's
+authorised sources). Work is committed locally and delivered as splatdiff_2026-11-10.bundle.
+
+Done:
+- QA from a fresh clone: `bash start.sh` built everything and served on 127.0.0.1:8765. Rebuilt
+  results identical to committed ones except timings (committed timings kept).
+- python/test_kernels.py guitar move 48: serial and OpenMP PASS (relL2 3.19e-04, counts match).
+- python/figures.py PASS, figures unchanged.
+- New scripts/export_diagram.mjs writes results/figures/pipeline_diagram.png (How it works diagram
+  plus step cards, 2x scale) for the report and slides.
+- Scene A box subtitle shortened to "3DGS, 90k to 250k splats" (text touched the box edges).
+- Screenshots checked: Viewer guitar move 1920, Results 1280, Benchmark 1920, How it works 1280.
+  No console errors, nothing misaligned. results/screenshots/ui_how_1280.png added.
+
+Tests: start.sh PASS, test_kernels PASS, figures.py PASS, 4 screenshots OK.
+
+Action for Aanand:
+1. Push the bundle: inside a clone, `git pull /path/to/splatdiff_2026-11-10.bundle main && git push origin main`.
+2. Add AakarshP26/SplatDIff to this scheduled task's GitHub sources so runs can push directly.
+3. Double-click start.bat once on a Windows laptop and report whether it works.
 
 ### 2026-11-08 (run 6, launcher test, UI checks, figures)
 

@@ -418,7 +418,7 @@ function buildDiagram() {
   const dots = (cx, cy, col) => [[-14, -6, 7], [4, -10, 5], [12, 6, 8], [-4, 10, 6], [-20, 8, 4]].map(([dx, dy, r]) => `<circle cx="${cx + dx}" cy="${cy + dy}" r="${r}" fill="${col}" fill-opacity=".55"/>`).join('');
   $('diagram').innerHTML = `<svg viewBox="0 0 1040 250" font-family="Inter, sans-serif" role="img" aria-label="SplatDiff pipeline">
     <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="#3a404a"/></marker></defs>
-    ${box(20, 30, 180, 'Scene A (t)', '3DGS, 90k to 250k Gaussians')}${box(20, 148, 180, 'Scene B (t+1)', 'different Gaussians')}
+    ${box(20, 30, 180, 'Scene A (t)', '3DGS, 90k to 250k splats')}${box(20, 148, 180, 'Scene B (t+1)', 'different Gaussians')}
     ${dots(232, 66, '#ffb547')}${dots(232, 184, '#ff5a5f')}
     ${arrow(256, 66, 330, 66)}${arrow(256, 184, 330, 184)}
     ${box(330, 30, 220, 'Canonical field Φ_A', 'K1: splat-to-grid, atomics', '#6e8bff')}${box(330, 148, 220, 'Canonical field Φ_B', '128³ voxels, colour-free', '#6e8bff')}
