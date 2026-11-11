@@ -23,9 +23,9 @@
       "change_rate": 0.003894893089784953,
       "raw_change_rate": 0.028449771329443305,
       "timing": {
-        "t_splat": 0.86858,
-        "t_compare": 0.101382,
-        "t_reduce": 0.002485
+        "t_splat": 0.489536,
+        "t_compare": 0.038426,
+        "t_reduce": 0.000812
       }
     },
     "color": {
@@ -37,9 +37,9 @@
       "change_rate": 0.0,
       "raw_change_rate": 0.0,
       "timing": {
-        "t_splat": 0.68938,
-        "t_compare": 0.037419,
-        "t_reduce": 0.000907
+        "t_splat": 0.58345,
+        "t_compare": 0.038738,
+        "t_reduce": 0.000946
       }
     },
     "move": {
@@ -51,9 +51,9 @@
       "change_rate": 0.12177138211019904,
       "raw_change_rate": 0.07303939807350449,
       "timing": {
-        "t_splat": 0.660423,
-        "t_compare": 0.066818,
-        "t_reduce": 0.001437
+        "t_splat": 0.544351,
+        "t_compare": 0.067097,
+        "t_reduce": 0.001263
       },
       "gt_voxels": 21502,
       "precision": 0.9760815878532882,
@@ -70,9 +70,9 @@
       "change_rate": 0.10145754512187558,
       "raw_change_rate": 0.04757744412805246,
       "timing": {
-        "t_splat": 0.785852,
-        "t_compare": 0.074811,
-        "t_reduce": 0.001509
+        "t_splat": 0.542158,
+        "t_compare": 0.04051,
+        "t_reduce": 0.000856
       },
       "gt_voxels": 16068,
       "precision": 0.962403716835799,
@@ -89,9 +89,9 @@
       "change_rate": 0.0688986997544837,
       "raw_change_rate": 0.05541424418604651,
       "timing": {
-        "t_splat": 0.888439,
-        "t_compare": 0.079387,
-        "t_reduce": 0.001934
+        "t_splat": 0.510811,
+        "t_compare": 0.03811,
+        "t_reduce": 0.000858
       },
       "gt_voxels": 12038,
       "precision": 0.9578938958133589,

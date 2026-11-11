@@ -56,7 +56,13 @@ python3 python/test_kernels.py     # correctness vs NumPy reference
 python3 python/pipeline.py         # results/*.json
 python3 python/export_web.py       # web/data/*
 python3 python/figures.py          # results/figures/*.png (needs matplotlib)
+cd web && python3 -m http.server 8765   # open http://localhost:8765/
 ```
+
+UI checks (headless Chromium via playwright-core, server running on :8765):
+`node scripts/key_check.mjs <outdir> guitar 1280 720` tests the shortcuts 1-5, O, R, space, P, ?
+and saves a screenshot per case; `node scripts/ui_check.mjs <outdir>` tests the wipe drag and
+overlay styles.
 
 Report and slide figures: results/figures/ (see its README) and results/screenshots/.
 
